@@ -103,6 +103,32 @@ def get_metrics(request):
         "alerts": list(active_alerts)
     })
 
+@api_view('POST')
+def register_server(request):
+    name = request.data.get("name")
+    ip_address = request.data.get("ip_address")
+
+    if not name or not ip_address:
+        return Response({"error": "Missing fields"}, status = 400)
+    
+    existing = Server.objects.filter(name = name, ip_address = ip_address).first
+
+    if existing:
+        return Response({
+            "api_key": str(existing.api_key),
+            "message": "Server already registered"
+        })
+    
+    server = Server.objects.create(
+        name =name,
+        ip_address = ip_address
+    )
+
+    return Response({
+        "api_key": str(server.api_key),
+        "message": "Server registered"
+    })
+
 
 def dashboard(request):
     return render(request, "monitoring/dashboard.html")

@@ -1,8 +1,9 @@
 from django.urls import path
-from .views import ingest_metric,get_metrics, dashboard
+from .views import ingest_metric,get_metrics, dashboard, register_server
 
 urlpatterns = [
     path('ingest/', ingest_metric),
     path('metrics/', get_metrics),
     path('dashboard/', dashboard),
+    path('register/', register_server)
 ]
