@@ -3,6 +3,8 @@ import time
 import re
 import requests
 from datetime import datetime
+import socket
+import platform
 
 URL_BASE = "http://127.0.0.1:8099/api"
 LOG_FILE = "/var/log/nginx/access.log"
@@ -15,12 +17,41 @@ LOG_PATTERN = re.compile(
     r'"(?P<agent>.*?)"\s+"(?P<host>.*?)"'
 )
 
+def register_server():
+    try:
+        name = platform.node() or "Nginx-Server"
+        ip = "127.0.0.1"
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.connect(("8.8.8.8", 80))
+            ip = s.getsockname()[0]
+            s.close()
+        except:
+            pass
+
+        response = requests.post(f"{URL_BASE}/register/", json={
+            "name": f"{name} (Nginx Agent)",
+            "ip_address": ip
+        })
+        if response.status_code == 200:
+            api_key = response.json().get("api_key")
+            with open("api_key.txt", "w") as f:
+                f.write(api_key)
+            print(f"Registered new server. API Key: {api_key}")
+            return api_key
+        else:
+            print("Failed to register server:", response.text)
+            exit(1)
+    except Exception as e:
+        print("Registration error:", e)
+        exit(1)
+
 def get_api_key():
     if os.path.exists("api_key.txt"):
         with open("api_key.txt", "r") as f:
             return f.read().strip()
-    print("Error: api_key.txt not found. Run the main agent first to register the server.")
-    exit(1)
+    print("API key not found, registering this agent with the backend...")
+    return register_server()
 
 def parse_nginx_time(time_str):
     # Example: 04/Jun/2026:20:20:20 +0000

@@ -1,7 +1,7 @@
 from celery import shared_task
 from django.utils import timezone
 from datetime import timedelta
-from .models import InfrastructureMetric, Alert
+from .models import InfrastructureMetric, Alert, APIRequestLog
 
 @shared_task
 def check_cpu_alerts():
@@ -34,3 +34,15 @@ def check_cpu_alerts():
             if active_alert:
                 active_alert.resolved = True
                 active_alert.save()
+
+@shared_task
+def cleanup_old_data():
+    threshold_date = timezone.now() - timedelta(days=7)
+    
+    # Delete old metrics
+    deleted_metrics, _ = InfrastructureMetric.objects.filter(timestamp__lt=threshold_date).delete()
+    
+    # Delete old API logs
+    deleted_logs, _ = APIRequestLog.objects.filter(requested_at__lt=threshold_date).delete()
+    
+    return f"Deleted {deleted_metrics} metrics and {deleted_logs} API logs older than 7 days."

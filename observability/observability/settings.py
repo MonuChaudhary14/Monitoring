@@ -54,7 +54,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'monitoring.middleware.APIRequestLoggingMiddleware',
 ]
 
 
@@ -158,3 +157,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", REDIS_URL or 'redis://127.0.0.1:6379/0')
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
+CELERY_BEAT_SCHEDULE = {
+    'cleanup-old-data-daily': {
+        'task': 'monitoring.tasks.cleanup_old_data',
+        'schedule': 86400.0, # Run every 24 hours
+    },
+}
