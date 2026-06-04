@@ -1,9 +1,22 @@
 from django.urls import path
-from .views import ingest_metric,get_metrics, dashboard, register_server
+from .views import (
+    api_activity,
+    dashboard,
+    dashboard_data,
+    get_metrics,
+    ingest_metric,
+    list_servers,
+    register_server,
+    system_summary,
+)
 
 urlpatterns = [
     path('ingest/', ingest_metric),
     path('metrics/', get_metrics),
     path('dashboard/', dashboard),
-    path('register/', register_server)
+    path('dashboard-data/', dashboard_data),
+    path('register/', register_server),
+    path('servers/', list_servers),
+    path('system-summary/', system_summary),
+    path('api-activity/', api_activity),
 ]

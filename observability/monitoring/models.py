@@ -34,3 +34,19 @@ class Alert(models.Model):
 
     def __str__(self):
         return f"{self.server.name} - {self.message}"
+
+
+class APIRequestLog(models.Model):
+    server = models.ForeignKey(Server, on_delete=models.SET_NULL, null=True, blank=True)
+    endpoint = models.CharField(max_length=100)
+    method = models.CharField(max_length=10)
+    status_code = models.PositiveSmallIntegerField()
+    source = models.CharField(max_length=20, default="external")
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    requested_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["endpoint", "requested_at"]),
+        ]
+        ordering = ["-requested_at"]
