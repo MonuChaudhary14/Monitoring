@@ -10,6 +10,7 @@ from django.shortcuts import render
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 import ipaddress
+from django.utils.dateparse import parse_datetime
 
 
 def broadcast_event(event_type, payload):
@@ -207,6 +208,49 @@ def ingest_metric(request):
         return Response({"status": "Metric stored"})
 
     return Response(serializer.errors, status=400)
+
+
+@api_view(['POST'])
+def ingest_logs(request):
+    api_key = request.headers.get("X-API-KEY")
+
+    if not api_key:
+        return Response({"error": "API key required"}, status=401)
+
+    try:
+        server = Server.objects.get(api_key=api_key)
+    except Server.DoesNotExist:
+        return Response({"error": "Invalid API key"}, status=403)
+
+    logs = request.data.get("logs", [])
+    if not isinstance(logs, list):
+        return Response({"error": "Invalid logs format"}, status=400)
+
+    log_objects = []
+    for log_data in logs:
+        # Optionally parse requested_at if provided
+        req_time = timezone.now()
+        if "requested_at" in log_data and log_data["requested_at"]:
+            parsed = parse_datetime(log_data["requested_at"])
+            if parsed:
+                req_time = parsed
+
+        log_objects.append(APIRequestLog(
+            server=server,
+            endpoint=str(log_data.get("endpoint", ""))[:100],
+            method=str(log_data.get("method", ""))[:10],
+            status_code=int(log_data.get("status_code", 0)),
+            source=str(log_data.get("source", "external"))[:50],
+            ip_address=log_data.get("ip_address"),
+            requested_at=req_time,
+        ))
+
+    APIRequestLog.objects.bulk_create(log_objects, batch_size=500)
+
+    # Trigger a broadcast so the dashboard updates
+    broadcast_event("summary_update", build_summary_payload(server))
+
+    return Response({"status": f"{len(log_objects)} logs stored"})
 
 
 @api_view(['GET'])

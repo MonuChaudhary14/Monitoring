@@ -41,7 +41,7 @@ class APIRequestLog(models.Model):
     endpoint = models.CharField(max_length=100)
     method = models.CharField(max_length=10)
     status_code = models.PositiveSmallIntegerField()
-    source = models.CharField(max_length=20, default="external")
+    source = models.CharField(max_length=50, default="external")
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     requested_at = models.DateTimeField(auto_now_add=True)
 

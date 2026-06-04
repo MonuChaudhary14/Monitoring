@@ -5,6 +5,7 @@ from .views import (
     dashboard_data,
     get_metrics,
     ingest_metric,
+    ingest_logs,
     list_servers,
     register_server,
     system_summary,
@@ -12,6 +13,7 @@ from .views import (
 
 urlpatterns = [
     path('ingest/', ingest_metric),
+    path('ingest-logs/', ingest_logs),
     path('metrics/', get_metrics),
     path('dashboard/', dashboard),
     path('dashboard-data/', dashboard_data),
