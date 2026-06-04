@@ -378,6 +378,23 @@ journalctl -u monitoring-celery -f
 sudo tail -f /var/log/nginx/error.log
 ```
 
+## Alternative Setup: Cloudflare Tunnel (No Nginx)
+
+If you are using a [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/) (using `cloudflared`) to expose your server via a subdomain (e.g., `server.example.com`), you can completely skip the Nginx configuration.
+
+1. **Skip Nginx**: Do not install or configure Nginx (Skip Step 12).
+2. **Run Daphne**: Set up the Daphne systemd service exactly as shown in Step 10, ensuring it runs on a local port like `8001`.
+3. **Configure Tunnel**: In your Cloudflare Zero Trust dashboard (or `cloudflared` config), create a Public Hostname routing your subdomain to `http://127.0.0.1:8001`. Cloudflare Tunnel supports WebSockets natively, so the real-time dashboard updates (Django Channels) will work out of the box.
+4. **Update `.env`**: Ensure your subdomain is included in the `ALLOWED_HOSTS` list in your `observability/.env` file.
+   ```env
+   ALLOWED_HOSTS=server.example.com,127.0.0.1,localhost
+   ```
+5. **CSRF Settings (If Needed)**: If you encounter `403 CSRF verification failed` errors when submitting forms (because Cloudflare provides HTTPS but proxies HTTP to your server), add the following to `observability/observability/settings.py`:
+   ```python
+   CSRF_TRUSTED_ORIGINS = ['https://server.example.com']
+   SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+   ```
+
 ## 16. Recommended Next Production Improvements
 
 This project now works well as an EC2-hosted MVP, but for stronger production readiness you should still add:
